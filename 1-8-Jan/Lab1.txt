@@ -1,0 +1,96 @@
+Lab Task 1 Jan 8th 2020
+
+Introduction to socket programming --Python sockets
+
+Background for this lab task.
+
+Socket is a programming interface for users to develop network programs. A socket creates an identifier
+that can be used like file identifier, meaning you can read and write into the identifier as you would a
+file. Operations like closing and opening are also similar.
+
+A socket is characterized by:
+	- domain: the protocols used for transport (AF_INET) (INET stands for Internet)
+	- type: reliable (SOCK_STREAM) unreliable (SOCK_DGRAM) (Transport layer protocol)
+	- protocol: version number of protocol in domain (IPv4 or IPv6)
+	- hostname: a way to identify hosts, a host name, IP address
+	- port: OS level identifier to send and receive data (similar to process ID). A server process
+	  "listens" on this port number and a client can receive/send data through this port.
+
+In Python sockets are objects and methods implement the socket functions.
+(Read more about python sockets from: https://docs.python.org/3.0/library/socket.html. Attached)
+
+Reference code to start with.
+
+A. Simple server (store and run as server.py)
+
+#!/usr/bin/python
+
+import socket               # Import socket module
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)         # Create a socket object
+host = socket.gethostbyname(socket.gethostname()) # Get local machine name
+port = 12345                # Reserve a port for your service.
+s.bind((host, port))        # Bind to the port
+
+print 'host ip', host
+s.listen(5)                 # Now wait for client connection.
+while True:
+   c, addr = s.accept()     # Establish connection with client.
+   print 'Got connection from', addr
+   c.send('Thank you for connecting')
+   c.close()                # Close the connection
+
+
+B. Simple client (client.py)
+
+#!/usr/bin/python           
+
+import socket               # Import socket module
+
+s = socket.socket()         # Create a socket object
+host = socket.gethostname() # Get local machine name/for this example
+ports = 12345             #server port
+portc = 32451 	   #client's own port for incoming connections (if any)
+s.bind((host, portc))
+s.connect((host, ports))
+print s.recv(1024)
+s.close                     # Close the socket when done
+
+# Following would start a server in background.
+$ python server.py &
+
+# Once server is started run client as follows:
+
+$ python client.py
+
+
+
+------------------------------
+Tasks to be done
+
+Task 1 : Modify the above code to make the client respond back to the server with an
+acknowledgement for the message it received from the server. Something like,
+"It was nice talking to you".
+
+Task 2 Specifications : Client-Server Set Deduplication
+The client generates a set of N random numbers (N is chosen at random between 25 and 100)
+and sends this list to the server.  The numbers are in the range of (1-100). The server
+examines this list and removes duplicates and sends back the deduplicated set back to the
+client. The client should display:
+	a. The final list of numbers
+	b. The list of numbers that were identified as duplicates 
+
+Task 3: Peer to Peer set intersection
+
+This task requires you to work with another student. First find out the ip address of
+your neighbor's machine with ifconfig (Linux) and ipconfig (Windows). Then modify the
+existing code to reflect that you are connecting to your neighbor's machine. Perform
+set intersection as in previous task.
+
+Ask the client to generate a random set of numbers (say 25 values between 1 and 100)
+and send them to server. The server generates a similar set of numbers between 1 and
+100. The server identifies the common numbers in both sets and sends them back to the
+client. The server should sort the numbers and send them back to the client and the
+client should print the final output.
+
+You cannot use the Internet for this project. Try with man pages or trial-and-error.
