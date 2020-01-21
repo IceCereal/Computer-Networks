@@ -10,6 +10,7 @@ host = socket.gethostbyname(socket.gethostname())
 
 # Choose port & bind it
 port = 3010
+s.bind(('0.0.0.0', port))
 
 print ("host ip:port:\t", host, port)
 
@@ -33,9 +34,9 @@ while True:
 	List = l_e(Client_List)
 	ListDup = [i for i in List]
 
-	serverList = [randint(1, 100) for i in range(len(List))]
+	print ("clientList (unsorted):\t", List)
 
-	print ("serverList:\t", serverList)
+	serverList = [randint(1, 100) for i in range(len(List))]
 
 	List.sort()
 
@@ -49,6 +50,11 @@ while True:
 			commonNumbers.append(i)
 
 	cli.send(bytes(str(List).encode("utf-8")))
+
+	print ("serverList:\t", list(serverList))
+	print ("clientList (sorted):\t", List)
+	print ("commonList:\t", commonNumbers)
+
 	cli.send(bytes(str(commonNumbers).encode("utf-8")))
 
 	cli.close()
