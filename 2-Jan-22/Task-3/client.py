@@ -28,7 +28,12 @@ if N > 999:
 		0 - deduplication
 		1 - intersection
 """
-service = 1
+SERVICE = {
+	"deduplication" : 0,
+	"intersection" : 1
+}
+
+service = SERVICE["intersection"]
 
 if service == 0:
 	s.send(bytes(str(1).encode("utf-8")))
@@ -38,15 +43,11 @@ if service == 0:
 
 	s.send(bytes(str(array).encode("utf-8")))
 
-	dedup_list_raw = s.recv(1024).decode("utf-8")
+	dedup_list_raw = s.recv(2048).decode("utf-8")
 	dedup_list = le(dedup_list_raw)
 
-	print ("Deduplicated List:\t", dedup_list)
-
-	commonNumbers_raw= s.recv(1024).decode("utf-8")
-	commonNumbers = le(commonNumbers_raw)
-
-	print ("Common Numbers:\t", commonNumbers)
+	print ("Deduplicated List:\t", dedup_list[0])
+	print ("Common Numbers:\t", dedup_list[1])
 
 elif service == 1:
 	s.send(bytes(str(2).encode("utf-8")))

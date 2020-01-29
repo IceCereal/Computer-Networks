@@ -35,7 +35,7 @@ while True:
 	"""
 	prompt = int(cli.recv(1024).decode("utf-8"))
 
-	if prompt == 0:
+	if prompt < 1000:
 		Client_List = cli.recv(1024).decode("utf-8")
 		List = l_e(Client_List)
 		ListDup = [i for i in List]
@@ -60,14 +60,13 @@ while True:
 			if i in serverList:
 				commonNumbers.append(i)
 
-		cli.send(bytes(str(List).encode("utf-8")))
-		sleep(0.25)
+		overallList = [List, commonNumbers]
+
+		cli.send(bytes(str(overallList).encode("utf-8")))
 
 		print ("serverList:\t", list(serverList))
 		print ("clientList (sorted):\t", List)
 		print ("commonList:\t", commonNumbers)
-
-		cli.send(bytes(str(commonNumbers).encode("utf-8")))
 	else:
 		Client_List = cli.recv(1024).decode("utf-8")
 		List = l_e(Client_List)
