@@ -13,7 +13,9 @@ portServer = 3010
 portClient = 1337
 
 s.bind((host, portClient))
-s.connect((host, portServer))
+
+# 10.59.102.66 is Winry
+s.connect(("10.59.102.66", portServer))
 
 # Confirmation
 print (s.recv(1024).decode("utf-8"))

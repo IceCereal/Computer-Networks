@@ -11,7 +11,7 @@ host = socket.gethostbyname(socket.gethostname())
 
 # Choose port & bind it
 port = 3010
-s.bind((host, port))
+s.bind(("0.0.0.0", port))
 
 print ("host ip:port:\t", host, port)
 
