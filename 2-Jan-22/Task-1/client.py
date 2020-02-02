@@ -28,7 +28,7 @@ if N > 999:
 		0 - deduplication
 		1 - intersection
 """
-service = 1
+service = int(input())
 
 if service == 0:
 	s.send(bytes(str(N).encode("utf-8")))

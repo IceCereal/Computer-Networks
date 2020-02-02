@@ -10,7 +10,7 @@ s = socket.socket()
 host = socket.gethostname()
 
 # Server Port
-portServer = 3011
+portServer = 3010
 
 # Client Port (for incoming connections)
 portClient = 13371
@@ -28,7 +28,7 @@ if N > 999:
 		0 - deduplication
 		1 - intersection
 """
-service = 1
+service = int(input())
 
 if service == 0:
 	s.send(bytes(str(1).encode("utf-8")))

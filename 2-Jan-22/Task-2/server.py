@@ -10,7 +10,7 @@ s = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
 host = socket.gethostbyname(socket.gethostname())
 
 # Choose port & bind it
-port = 3011
+port = 3010
 s.bind((host, port))
 
 print ("host ip:port:\t", host, port)

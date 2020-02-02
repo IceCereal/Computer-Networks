@@ -1,0 +1,133 @@
+Lab Task 3 Jan 29 2020:
+	Error detection and recovery
+
+This lab focuses on detection of bit errors and recovering from such errors.
+
+Task: Generate a NxN matrix of bits, i.e., 0s and 1s only,  at the client. The client transmits this matrix to the server.
+
+Before transmission, the client may induce a 1-bit error in the data at random. A 1-bit error means 1 is changed to 0 or 0 is changed to 1.
+
+Programming Tasks
+	1. Design and execute a program to detect all such 1-bit errors
+	2. Design an error correcting code so that the server can correct the 1 bit error.
+	3. All code to be done in C: use the sample client and server files as base.
+
+client.c:
+
+#include <stdio.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+#define MAXLINE 10000
+
+void err_sys(const char *x)
+{
+	perror(x);
+	exit(1);
+}
+
+void err_quit(const char *x)
+{
+	perror(x);
+	exit(1);
+}
+
+typedef const struct sockaddr SA;
+
+int main(int argc, char **argv)
+{
+	
+	int sockfd, n;
+	char recvline[MAXLINE + 1];
+	struct sockaddr_in servaddr;
+
+	if (argc != 2)
+		err_quit("usage: a.out <IPaddress>");
+
+	if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		err_sys("socket error");
+
+	bzero(&servaddr, sizeof(servaddr));
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_port = htons(5500); /* daytime server */
+	if (inet_pton(AF_INET, argv[1], &servaddr.sin_addr) <= 0)
+		err_quit("inet_pton error for");
+
+	if (connect(sockfd, (SA *)&servaddr, sizeof(servaddr)) < 0)
+		err_sys("connect error");
+
+	while ((n = read(sockfd, recvline, MAXLINE)) > 0)
+	{
+		recvline[n] = 0; /* null terminate */
+		if (fputs(recvline, stdout) == EOF)
+			err_sys("fputs error");
+	}
+	if (n < 0)
+		err_sys("read error");
+
+	exit(0);
+}
+
+server.c:
+
+#include <stdio.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include<time.h>
+#define MAXLINE 10000
+#define LISTENQ 5
+
+typedef const struct sockaddr SA;
+
+int main(int argc, char **argv)
+{
+	int listenfd, connfd;
+	struct sockaddr_in servaddr;
+	char buff[MAXLINE];
+	time_t ticks;
+
+	/* change this*/
+	listenfd = socket(AF_INET, SOCK_STREAM, 0);
+
+	bzero(&servaddr, sizeof(servaddr));
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_addr.s_addr =htonl(INADDR_ANY);	 
+	servaddr.sin_port = htons(5500); /* change this */
+   SA cliaddr;
+ 
+
+	/* change this to regular call*/
+	bind(listenfd, (SA *)&servaddr, sizeof(servaddr));
+
+	/* change this*/
+	listen(listenfd, LISTENQ);
+
+printf("Local IP address : %s \n", inet_ntoa(servaddr.sin_addr));
+
+	for (;;)
+	{
+		connfd = accept(listenfd, (SA *)&cliaddr, NULL);
+		ticks = time(NULL);
+		snprintf(buff, sizeof(buff), "%.24s\r\n", ctime(&ticks));
+
+		/*change this */
+
+		write(connfd, buff, strlen(buff));
+
+		close(connfd);
+	}
+}
