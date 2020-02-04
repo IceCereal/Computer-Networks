@@ -6,7 +6,7 @@
 #include <arpa/inet.h>
 
 #define PORT 3010
-#define BUFFER 1024
+#define BUFFER 1337
 #define BACKLOG 4
 
 int main(int argc, char *argv[]){
