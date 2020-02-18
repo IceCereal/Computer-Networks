@@ -20,9 +20,9 @@ int main(int argc, char *argv[]){
 	int N = atoi(argv[1]);
 	int seed = atoi(argv[2]);
 	int i, j;
-	uint32_t array[150];
+	uint32_t array[1000000];
 
-	if (N > 10){
+	if (N > 100){
 		printf("N cannot be greater than 10.\n");
 		exit(EXIT_FAILURE);
 	} if (N == 0){
@@ -91,12 +91,12 @@ int main(int argc, char *argv[]){
 
 	array[(2*N)+1 + (row_mess*N + col_mess)] = (!array[(2*N)+1 + (row_mess*N + col_mess)]);
 
-	// for (i = 0; i < N; ++i){
-	// 	for (j = 0; j < N; ++j){
-	// 		printf("%d ", array[(2*N)+1 + (i*N + j)]);
-	// 	}
-	// 	printf("\n");
-	// }
+	for (i = 0; i < N; ++i){
+		for (j = 0; j < N; ++j){
+			printf("%d ", array[(2*N)+1 + (i*N + j)]);
+		}
+		printf("\n");
+	}
 
 	if (send(sock_fd, array, sizeof(array), 0) == -1){
 		perror("Sending data via socket");

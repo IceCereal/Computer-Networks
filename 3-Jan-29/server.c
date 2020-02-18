@@ -6,13 +6,13 @@
 #include <arpa/inet.h>
 
 #define PORT 3010
-#define BUFFER 1337
+#define BUFFER 10000000
 #define BACKLOG 4
 
 int main(int argc, char *argv[]){
 	int listen_fd, conn_fd;
 
-	uint32_t raw_data[150];
+	uint32_t raw_data[100000];
 	int i, j;
 
 	struct sockaddr_in servaddr;
