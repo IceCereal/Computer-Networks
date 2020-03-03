@@ -136,12 +136,19 @@ int IndexGet(char **args){
 		return 1;
 	} else if (strcmp(args[1], "ShortList") == 0){
 		if ((args[2] != NULL) && (args[3] != NULL)){
+			// TODO: Validate args[2] and args[3], somehow
 			return connection(1, args);
+		} else{
+			printf("\nUsage:\tIndexGet ShortList StartingTimeStamp EndingTimeStamp\n");
+			return 1;
 		}
 	} else if (strcmp(args[1], "LongList") == 0){
 		return connection(2, args);
 	}else if (strcmp(args[1], "RegEx") == 0){
-		return connection(3, args);
+		if (args[2] != NULL)
+			return connection(3, args);
+		printf("\nUsage:\tIndexGet RegEx <\"RegEx\">");
+		return 1;
 	} else{
 		printf("\nUsage:\tIndexGet ShortList|LongList|RegEx\n");
 		return 1;
@@ -154,22 +161,6 @@ int FileHash(char **args){
 		return 1;
 	} else if (strcmp(args[1], "Verify") == 0){
 		if (args[2] != NULL){
-			int flag_fileFound = 0;
-			DIR *dir;
-			struct dirent *ent;
-			if ((dir = opendir (".")) != NULL) {
-				while ((ent = readdir (dir)) != NULL) {
-					if (strcmp(args[2], ent->d_name) == 0)
-						flag_fileFound = 1;
-				}
-				closedir (dir);
-			}
-
-			if (!flag_fileFound){
-				printf("\nFile doesn't exist!\n");
-				return 1;
-			}
-
 			return connection(4, args);
 		}
 	} else{
@@ -209,5 +200,141 @@ int FileDownload(char **args){
 		return 1;
 	} else{
 		return connection(6, args);
+	}
+}
+
+int connection(int type, char **args){
+	int sock_fd;
+	struct sockaddr_in servaddr;
+
+	if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0){
+		perror("Socket Failed!");
+		exit(EXIT_FAILURE);
+	}
+
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_port = htons(PORT);
+
+	if (inet_pton(AF_INET, "127.0.0.1", &servaddr.sin_addr) <= 0){
+		perror("Invalid Address!");
+		exit(EXIT_FAILURE);
+	}
+
+	if (connect(sock_fd, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0){
+		perror("Connection Failed!");
+		exit(EXIT_FAILURE);
+	}
+
+	// Let the massacre begin
+	// NOTE TO SELF: DOCUMENT **EVERYTHING**
+	struct InitData init;
+	
+	init.type = type;
+
+	// First we send type (through struct InitData)
+	if (send(sock_fd, &init, sizeof(init), 0) == -1){
+		perror("\nError in sending InitData: init\n");
+		return 1;
+	}
+
+	// I don't want to switch (type). It'll make it look bloated compared to a
+	// if - else if - ... - else if - else bridge.
+
+	// TYPE 1: IndexGet ShortList TimeStart TimeFinish
+	if (type == 1){
+		struct ShortList_Data sld;
+		sld.startModTime = args[2];
+		sld.endModTime = args[3];
+
+		if (send(sock_fd, &sld, sizeof(sld), 0) == -1){
+			perror("\nError in sending ShortList_Data: sld\n");
+			return 1;
+		}
+
+		// TODO: RECV DATA & OUTPUT
+		return 1;
+	}
+
+	// TYPE 2: IndexGet LongList
+	else if (type == 2){
+		// TODO: RECV DATA & OUTPUT
+		return 1;
+	}
+
+	// TYPE 3: IndexGet RegEx "RegEx"
+	else if (type == 3){
+		struct RegEx_Data red;
+		strcpy(red.regex, args[2]);
+
+		if (send(sock_fd, &red, sizeof(red), 0) == -1){
+			perror("\nError in sending RegEx_Data: red\n");
+			return 1;
+		}
+
+		// TODO: RECV DATA & OUTPUT
+		return 1;
+	}
+
+	// TYPE 4: FileHash Verify FileName
+	else if (type == 4){
+		struct FileHashVerify_Data fhvd;
+		strcpy(fhvd.filename, args[2]);
+
+		if (send(sock_fd, &fhvd, sizeof(fhvd), 0) == -1){
+			perror("\nError in sending FileHashVerify_Data: fhvd\n");
+			return 1;
+		}
+
+		// TODO: RECV DATA & OUTPUT
+		return 1;
+	}
+
+	// Type 5: FileUpload Filename
+	else if (type == 5){
+		struct FileUpload_Data fud;
+		struct stat file_stats;
+
+		stat(fud.filename, &file_stats);
+
+		strcpy(fud.filename, args[1]);
+		fud.filesize = file_stats.st_size;
+
+		if (send(sock_fd, &fud, sizeof(fud), 0) == -1){
+			perror("\nError in sending FileUpload_Data: fud\n");
+			return 1;
+		}
+
+		FILE *filePtr = fopen(fud.filename, "rb");
+
+		char buffer[fud.filesize];
+
+		fread(buffer, 1, fud.filesize, filePtr);
+
+		if (send(sock_fd, buffer, fud.filesize, 0) == -1){
+			perror("\nError in uploading file. send(socket, buffer, filesize, 0)\n");
+			return 1;
+		}
+
+		fclose(filePtr);
+	}
+
+	// Type 6: FileDownload Filename
+	else if (type == 6){
+		struct FileDownload_Data fdd;
+		strcpy(fdd.filename, args[1]);
+
+		if (send(sock_fd, &fdd, sizeof(fdd), 0) == -1){
+			perror("\nError in sending FileDownload_Data: fdd\n");
+			return 1;
+		}
+
+		// TODO: RECV DATA & OUTPUT
+		return 1;
+	}
+
+	// Type ...? There should be no more types
+	else{
+		printf("\nType:\t%d is undefined. Type can only be between 1-6.\n");
+		return 1;
 	}
 }
