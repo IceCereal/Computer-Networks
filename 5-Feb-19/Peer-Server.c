@@ -52,30 +52,116 @@ int main(int argc, char *argv[]){
 		
 		printf("\nGot connection!\n");
 
-		struct Head head;
+		// Server massacre begins here
+		struct InitData init;
 
-		if (recv(conn_fd, &head, sizeof(head), 0) == -1){
-			perror("Error in receiving data!");
+		if (recv(conn_fd, &init, sizeof(init), 0) == -1){
+			perror("Error in receiving InitData: init!");
 			exit(EXIT_FAILURE);
 		}
 
-		printf("Receiving File:\treceived/%s\n", head.FILENAME);
-		printf("File Size:\t%d\n", head.length);
+		// I don't want to switch (type). It'll make it look bloated compared to a
+		// if - else if - ... - else if - else bridge.
 
-		char Filename[256] = "received/";
-		strcat(Filename, head.FILENAME);
+		int type = init.type;
 
-		char buffer[head.length];
+		// TYPE 1: IndexGet ShortList TimeStart TimeFinish
+		if (type == 1){
+			struct ShortList_Data sld;
 
-		FILE *recvFile = fopen(Filename, "wb");
+			if (recv(conn_fd, &sld, sizeof(sld), 0) == -1){
+				perror("Error in receiving ShortList_Data: sld!");
+				exit(EXIT_FAILURE);
+			}
 
-		if (read(conn_fd, &buffer, 1024*1024) == -1){
-			perror("Error in receiving data!");
+			long int startTime = sld.startModTime;
+			long int endTime = sld.endModTime;
+
+			// TODO: Create a function to handle this and send data back
+		}
+
+		// TYPE 2: IndexGet LongList
+		else if (type == 2){
+			// TODO: Create a function to handle this and send data back
+		}
+
+		// TYPE 3: IndexGet RegEx "RegEx"
+		else if (type == 3){
+			struct RegEx_Data red;
+
+			if (recv(conn_fd, &red, sizeof(red), 0) == -1){
+				perror("Error in receiving RegEx_Data: red!");
+				exit(EXIT_FAILURE);
+			}
+
+			char regex[256];
+			strcpy(regex, red.regex);
+
+			// TODO: Create a function to handle this and send data back
+		}
+
+		// TYPE 4: FileHash Verify FileName
+		else if (type == 4){
+			struct FileHashVerify_Data fhvd;
+
+			if (recv(conn_fd, &fhvd, sizeof(fhvd), 0) == -1){
+				perror("Error in receiving FileHasVerify_Data: fhvd!");
+				exit(EXIT_FAILURE);
+			}
+
+			char filename[256];
+			strcpy(filename, fhvd.filename);
+
+			// TODO: Create a function to handle this and send data back
+		}
+
+		// TYPE 5: FileUpload Filename
+		else if (type == 5){
+			struct FileUpload_Data fud;
+
+			if (recv(conn_fd, &fud, sizeof(fud), 0) == -1){
+				perror("Error in receiving FileUpload_Data: fud!");
+				exit(EXIT_FAILURE);
+			}
+
+			char filename[300] = "SharedServer/";
+			strcat(filename, fud.filename);
+
+			char buffer[fud.filesize];
+
+			FILE *recvFile_Ptr = fopen(filename, "w+b");
+
+			if (read(conn_fd, &buffer, fud.filesize) == -1){
+				perror("Error in receiving file: read(conn_fd, &buffer, fud.filesize)!");
+				exit(EXIT_FAILURE);
+			}
+
+			setvbuf(recvFile_Ptr, buffer, _IOFBF, fud.filesize);
+			fwrite(buffer, 1, sizeof(buffer), recvFile_Ptr);
+
+			fclose(recvFile_Ptr);
+		}
+
+		// TYPE 6: FileDownload Filename
+		else if (type == 6){
+			struct FileDownload_Data fdd;
+
+			if (recv(conn_fd, &fdd, sizeof(fdd), 0) == -1){
+				perror("Error in receiving FileDownload_Data: fdd!");
+				exit(EXIT_FAILURE);
+			}
+
+			char filename[300] = "SharedServer/";
+			strcat(filename, fdd.filename);
+
+			// TODO: Create a function to handle this and send data back
+		}
+
+		else{
+			printf("Type:\t%d does not exist. Type: 1 - 6.\n", init.type);
 			exit(EXIT_FAILURE);
 		}
 
-
-		fwrite(buffer, 1, sizeof(buffer), recvFile);
 
 		printf("\nClose Connection!\n");
 	}
