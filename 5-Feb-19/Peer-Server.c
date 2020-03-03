@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <dirent.h>
 
 #include "common.h"
 
@@ -154,7 +155,45 @@ int main(int argc, char *argv[]){
 			char filename[300] = "SharedServer/";
 			strcat(filename, fdd.filename);
 
-			// TODO: Create a function to handle this and send data back
+			struct FileDownload_Return_Data fdrd;
+
+			FILE *filePtr = fopen(filename, "rb");
+
+			if (filePtr == NULL){
+				fdrd.status = 0;
+				if (send(conn_fd, &fdrd, sizeof(fdrd), 0) == -1){
+					perror("\nError in sending FileDownload_Return_Data: fdrd\n");
+					exit(EXIT_FAILURE);
+				}
+
+				printf("\nClose Connection!\n");
+				continue;
+			}
+
+			struct stat file_stats;
+			stat(filename, &file_stats);
+
+			printf("%ld", file_stats.st_size);
+
+			fdrd.status = 1;
+			strcpy(fdrd.filename, fdd.filename);
+			fdrd.filesize = file_stats.st_size;
+
+			if (send(conn_fd, &fdrd, sizeof(fdrd), 0) == -1){
+				perror("\nError in sending FileDownload_Return_Data: fdrd\n");
+				exit(EXIT_FAILURE);
+			}
+
+			char buffer[fdrd.filesize];
+
+			fread(buffer, 1, fdrd.filesize, filePtr);
+
+			if (send(conn_fd, buffer, fdrd.filesize, 0) == -1){
+				perror("\nError in uploading file to client. send(conn_fd, buffer, fdrd.filesize, 0)\n");
+				exit(EXIT_FAILURE);
+			}
+
+			fclose(filePtr);
 		}
 
 		else{

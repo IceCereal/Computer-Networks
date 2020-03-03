@@ -338,7 +338,38 @@ int connection(int type, char **args){
 			return 1;
 		}
 
-		// TODO: RECV DATA & OUTPUT
+		struct FileDownload_Return_Data fdrd;
+		fdrd.status = 0;
+		fdrd.filesize = 0;
+		strcpy(fdrd.filename, "");
+
+		if (recv(sock_fd, &fdrd, sizeof(fdrd), 0) == -1){
+			perror("Error in receiving FileDownload_Return_Data: fdrd!");
+			return 1;
+		}
+
+		if (!fdrd.status){
+			printf("\nFile doesn't exist on server!\n");
+			return 1;
+		}
+
+		char filename[300] = "SharedClient/";
+		strcat(filename, fdd.filename);
+
+		char buffer[fdrd.filesize];
+
+		FILE *recvFile_Ptr = fopen(filename, "wb");
+
+		if (read(sock_fd, &buffer, fdrd.filesize) == -1){
+			perror("Error in receiving file: read(sock_fd, &buffer, fdrd.filesize)!");
+			return 1;
+		}
+
+		setvbuf(recvFile_Ptr, buffer, _IOFBF, fdrd.filesize);
+		fwrite(buffer, 1, sizeof(buffer), recvFile_Ptr);
+
+		fclose(recvFile_Ptr);
+
 		return 1;
 	}
 

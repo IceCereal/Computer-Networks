@@ -41,4 +41,13 @@ struct FileDownload_Data{
 	char filename[256];
 };
 
+/* Server Sided Structures */
+// FileDownload Filename
+struct FileDownload_Return_Data{
+	unsigned int status;
+	char filename[256];
+	long int filesize;
+};
+
+
 #endif
