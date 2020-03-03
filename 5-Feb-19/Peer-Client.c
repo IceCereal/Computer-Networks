@@ -116,13 +116,17 @@ int (*builtin_func[]) (char **) = {
 	&FileUpload
 };
 
+int num_builtin(){
+	return (sizeof(builtin_str) / sizeof(char *));
+}
+
 int execute_input(char **args, char *line){
 	if (args[0] == NULL)
 		return 1;
 
-	int num_builtin = icsh_num_builtin();
+	int number_builtin = num_builtin();
 
-	for (int i = 0; i < num_builtin; ++i){
+	for (int i = 0; i < number_builtin; ++i){
 		if (strcmp(args[0], builtin_str[i]) == 0)
 			return (*builtin_func[i])(args);
 	}
@@ -162,6 +166,9 @@ int FileHash(char **args){
 	} else if (strcmp(args[1], "Verify") == 0){
 		if (args[2] != NULL){
 			return connection(4, args);
+		} else{
+			printf("\nUsage:\tFileHash Verify <FileName>\n");
+			return 1;
 		}
 	} else{
 		printf("\nUsage:\tFileHash Verify <FileName>\n");
@@ -243,8 +250,8 @@ int connection(int type, char **args){
 	// TYPE 1: IndexGet ShortList TimeStart TimeFinish
 	if (type == 1){
 		struct ShortList_Data sld;
-		sld.startModTime = args[2];
-		sld.endModTime = args[3];
+		sld.startModTime = atol(args[2]);
+		sld.endModTime = atol(args[3]);
 
 		if (send(sock_fd, &sld, sizeof(sld), 0) == -1){
 			perror("\nError in sending ShortList_Data: sld\n");
@@ -289,14 +296,15 @@ int connection(int type, char **args){
 		return 1;
 	}
 
-	// Type 5: FileUpload Filename
+	// TYPE 5: FileUpload Filename
 	else if (type == 5){
 		struct FileUpload_Data fud;
 		struct stat file_stats;
 
+		strcpy(fud.filename, args[1]);
+
 		stat(fud.filename, &file_stats);
 
-		strcpy(fud.filename, args[1]);
 		fud.filesize = file_stats.st_size;
 
 		if (send(sock_fd, &fud, sizeof(fud), 0) == -1){
@@ -316,9 +324,11 @@ int connection(int type, char **args){
 		}
 
 		fclose(filePtr);
+
+		return 1;
 	}
 
-	// Type 6: FileDownload Filename
+	// TYPE 6: FileDownload Filename
 	else if (type == 6){
 		struct FileDownload_Data fdd;
 		strcpy(fdd.filename, args[1]);
@@ -332,9 +342,9 @@ int connection(int type, char **args){
 		return 1;
 	}
 
-	// Type ...? There should be no more types
+	// TYPE ...? There should be no more types
 	else{
-		printf("\nType:\t%d is undefined. Type can only be between 1-6.\n");
+		printf("\nType:\t%d is undefined. Type can only be between 1-6.\n", type);
 		return 1;
 	}
 }
