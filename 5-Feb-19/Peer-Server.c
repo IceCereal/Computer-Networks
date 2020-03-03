@@ -65,21 +65,17 @@ int main(int argc, char *argv[]){
 		char Filename[256] = "received/";
 		strcat(Filename, head.FILENAME);
 
-		char buffer[BUFFER];
+		char buffer[head.length];
 
-		FILE *recvFile = fopen(Filename, "a");
-		while (read(conn_fd, &buffer, BUFFER) > 0){
-			fprintf(recvFile, buffer);
+		FILE *recvFile = fopen(Filename, "wb");
+
+		if (read(conn_fd, &buffer, 1024*1024) == -1){
+			perror("Error in receiving data!");
+			exit(EXIT_FAILURE);
 		}
-		// if (recv(conn_fd, &buffer, sizeof(buffer), 0) == -1){
-		// 	perror("Error in receiving data!");
-		// 	exit(EXIT_FAILURE);
-		// }
 
 
-		
-
-		// fwrite(buffer, sizeof(char), head.length, recvFile);
+		fwrite(buffer, 1, sizeof(buffer), recvFile);
 
 		printf("\nClose Connection!\n");
 	}

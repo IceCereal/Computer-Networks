@@ -61,31 +61,27 @@ int main(int argc, char *argv[]){
 	struct Head head;
 
 	strcpy(head.FILENAME, filename);
-	head.length = file_stats.st_size;
 	
+	FILE *filePtr = fopen(head.FILENAME, "rb");
+
+	fseek(filePtr, 0, SEEK_END);
+	int fsize = (int) ftell(filePtr);
+	fseek(filePtr, 0, SEEK_SET);
+
+	head.length = fsize;
+
 	printf("Sending File Metadata...\nFile:\t%s\nFile Size:\t%d\n", head.FILENAME, head.length);
 
 	if (send(sock_fd, &head, sizeof(head), 0) == -1){
 		perror("Sending data via socket");
 		exit(EXIT_FAILURE);
 	}
-	// long int offset = 0;
-	// sendfile(sock_fd, fd, &offset, head.length);
 
-	int counter = head.length;
-	char buffer[BUFFER];
+	char buffer[fsize];
 
-	FILE *filePtr = open(head.FILENAME, "r");
+	fread(buffer, 1, fsize, filePtr);
 
-	while (counter > 0){
-		printf("%d\n", counter);
-		fscanf(filePtr/, buffer);
-		if (send(sock_fd, &buffer, sizeof(buffer), 0) == -1){
-			perror("Sending data via socket");
-			exit(EXIT_FAILURE);
-		}
-		counter -= BUFFER;
-	}
+	printf("%ld", send(sock_fd, buffer, fsize, 0));
 
 	return 0;
 }
