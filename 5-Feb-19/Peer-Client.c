@@ -264,7 +264,15 @@ int connection(int type, char **args){
 
 	// TYPE 2: IndexGet LongList
 	else if (type == 2){
-		// TODO: RECV DATA & OUTPUT
+		struct LongList_Return_Data llrd;
+
+		if (recv(sock_fd, &llrd, sizeof(llrd), 0) == -1){
+			perror("Error in receiving LongList_Return_Data: llrd!");
+			return 1;
+		}
+
+		printf("%s", llrd.output);
+
 		return 1;
 	}
 
@@ -292,7 +300,15 @@ int connection(int type, char **args){
 			return 1;
 		}
 
-		// TODO: RECV DATA & OUTPUT
+		struct FileHashVerify_Return_Data fhvrd;
+		
+		if (recv(sock_fd, &fhvrd, sizeof(fhvrd), 0) == -1){
+			perror("Error in receiving FileHashVerify_Return_Data: fhvrd!");
+			return 1;
+		}
+
+		printf("\n%s\t%s\t%s\n", fhvd.filename, fhvrd.md5value, fhvrd.lastModTime);
+
 		return 1;
 	}
 

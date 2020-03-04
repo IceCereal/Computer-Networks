@@ -49,5 +49,14 @@ struct FileDownload_Return_Data{
 	long int filesize;
 };
 
+// IndexGet LongList
+struct LongList_Return_Data{
+	char output[1024*5];
+};
+
+struct FileHashVerify_Return_Data{
+	char md5value[33];
+	char lastModTime[50];
+};
 
 #endif

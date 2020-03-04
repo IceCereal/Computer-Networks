@@ -9,12 +9,18 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <dirent.h>
+#include <openssl/md5.h>
+#include <time.h>
 
 #include "common.h"
 
 #define PORT 3010
 #define BUFFER 1024
 #define BACKLOG 4
+
+char *ShortList(long int, long int);
+char *LongList();
+char *FileHash(char *);
 
 int main(int argc, char *argv[]){
 	int listen_fd, conn_fd;
@@ -83,7 +89,17 @@ int main(int argc, char *argv[]){
 
 		// TYPE 2: IndexGet LongList
 		else if (type == 2){
-			// TODO: Create a function to handle this and send data back
+			struct LongList_Return_Data llrd;
+
+			strcpy(llrd.output, LongList());
+
+			if (send(conn_fd, &llrd, sizeof(llrd), 0) == -1){
+				perror("\nError in sending LongList_Return_Data: llrd\n");
+				exit(EXIT_FAILURE);
+			}
+
+			printf("\nClose Connection!\n");
+			continue;
 		}
 
 		// TYPE 3: IndexGet RegEx "RegEx"
@@ -110,10 +126,30 @@ int main(int argc, char *argv[]){
 				exit(EXIT_FAILURE);
 			}
 
-			char filename[256];
-			strcpy(filename, fhvd.filename);
+			char *filename;
+			filename = (char *)malloc(sizeof(char) * 256);
+			strcpy(filename, "SharedServer/");
+			strcat(filename, fhvd.filename);
+			
+			struct FileHashVerify_Return_Data fhvrd;
+			struct stat file_stat;
+			stat(filename, &file_stat);
 
-			// TODO: Create a function to handle this and send data back
+			strftime(fhvrd.lastModTime, 20, "%d-%m-%y", localtime(&(file_stat.st_ctime)));
+
+			char *md5value;
+			md5value = (char *)malloc(sizeof(char) * 33);
+
+			md5value = FileHash(filename);
+			
+			strcpy(fhvrd.md5value, md5value);
+
+			if (send(conn_fd, &fhvrd, sizeof(fhvrd), 0) == -1){
+				perror("\nError in sending FileHashVerify_Return_Data: fhvrd\n");
+				exit(EXIT_FAILURE);
+			}
+
+			free(filename); free(md5value);
 		}
 
 		// TYPE 5: FileUpload Filename
@@ -207,4 +243,93 @@ int main(int argc, char *argv[]){
 
 	return 0;
 
+}
+
+char *ShortList(long int StartTime, long int StopTime){
+	char returnString[1024] = "";
+	DIR *dir;
+	struct dirent *ent;
+	struct stat file_stat;
+	if ((dir = opendir (".")) != NULL) {
+		while ((ent = readdir (dir)) != NULL) {
+			stat(ent->d_name, &file_stat);
+
+			if ((StartTime < file_stat.st_mtime) && (file_stat.st_mtime < StopTime)){
+				char size[10];
+				char lastMod[20];
+
+				sprintf(size, "%ld", file_stat.st_size);
+				sprintf(lastMod, "%ld", file_stat.st_mtime);
+
+				strcat(returnString, ent->d_name);
+				strcat(returnString, "\t");
+				strcat(returnString, size);
+				strcat(returnString, "\t");
+				strcat(returnString, lastMod);
+				strcat(returnString, "\n");
+			}
+		}
+		closedir (dir);
+	}
+	return (returnString);
+}
+
+char *LongList(){
+	char *returnString;
+	returnString = (char *)malloc(1024*5 * sizeof(char));
+	DIR *dir;
+	struct dirent *ent;
+	struct stat file_stat;
+	if ((dir = opendir ("SharedServer")) != NULL) {
+		while ((ent = readdir (dir)) != NULL) {
+			if (ent->d_type == DT_REG){
+				stat(ent->d_name, &file_stat);
+				char lastMod[20] = "";
+				sprintf(lastMod, "%ld", file_stat.st_mtime);
+
+				char tempFile[256] = "SharedServer/";
+				strcat(tempFile, ent->d_name);
+				FILE *f = fopen(tempFile, "r");
+
+				fseek(f, 0, SEEK_END); // seek to end of file
+				long int sizeValue = ftell(f); // get current file pointer
+
+				fclose(f);
+
+				char size[10];
+				sprintf(size, "%ld", sizeValue);
+
+				strcat(returnString, ent->d_name);
+				strcat(returnString, "\t");
+				strcat(returnString, size);
+				strcat(returnString, "\t");
+				strcat(returnString, lastMod);
+				strcat(returnString, "\n");
+			}
+		}
+		closedir (dir);
+	}
+	strcat(returnString, "\0");
+	return returnString;
+}
+
+char *FileHash(char *filename){
+	unsigned char *digest;
+	digest = (unsigned char *)malloc(16 * sizeof(unsigned char));
+	MD5_CTX context;
+	struct stat file_stat;
+	stat(filename, &file_stat);
+	FILE *f = fopen(filename, "r");
+	char buffer[file_stat.st_size+1];
+	fread(buffer, 1, file_stat.st_size, f);
+	MD5_Init(&context);
+	MD5_Update(&context, buffer, strlen(buffer));
+	MD5_Final(digest, &context);
+
+	char *md5string;
+	md5string = (char *)malloc(33 * sizeof(char));
+	for(int i = 0; i < 16; ++i)
+		sprintf(&md5string[i*2], "%02x", (unsigned int)digest[i]);
+
+	return md5string;
 }
