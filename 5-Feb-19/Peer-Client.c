@@ -35,7 +35,7 @@ int main(int argc, char *argv[]){
 	do{
 		char *inputLine;
 		char **args;
-		printf("\n>\t");
+		printf("\n> ");
 		inputLine = get_line();
 		args = parse_line(inputLine);
 		statusFlag = execute_input(args, inputLine);

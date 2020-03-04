@@ -283,21 +283,16 @@ char *LongList(){
 	if ((dir = opendir ("SharedServer")) != NULL) {
 		while ((ent = readdir (dir)) != NULL) {
 			if (ent->d_type == DT_REG){
-				stat(ent->d_name, &file_stat);
-				char lastMod[20] = "";
-				sprintf(lastMod, "%ld", file_stat.st_mtime);
-
 				char tempFile[256] = "SharedServer/";
 				strcat(tempFile, ent->d_name);
-				FILE *f = fopen(tempFile, "r");
 
-				fseek(f, 0, SEEK_END); // seek to end of file
-				long int sizeValue = ftell(f); // get current file pointer
+				stat(tempFile, &file_stat);
 
-				fclose(f);
+				char lastMod[20];
+				strftime(lastMod, 20, "%d-%m-%y", localtime(&(file_stat.st_ctime)));
 
 				char size[10];
-				sprintf(size, "%ld", sizeValue);
+				sprintf(size, "%ld", file_stat.st_size);
 
 				strcat(returnString, ent->d_name);
 				strcat(returnString, "\t");
