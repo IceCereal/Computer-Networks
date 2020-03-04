@@ -16,8 +16,8 @@ struct InitData{
 
 // IndexGet ShortList TimeStart TimeEnd
 struct ShortList_Data{
-	long int startModTime; // Start of Last Modified Time
-	long int endModTime; // End of Last Modified Time
+	char startModTime[20]; // Start of Last Modified Time
+	char endModTime[20]; // End of Last Modified Time
 };
 
 // IndexGet RegEx "RegEx"
@@ -54,6 +54,11 @@ struct LongList_Return_Data{
 	char output[1024*5];
 };
 
+struct ShortList_Return_Data{
+	char output[1024*5];
+};
+
+// FileHash Verify FileName
 struct FileHashVerify_Return_Data{
 	char md5value[33];
 	char lastModTime[50];

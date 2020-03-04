@@ -1,3 +1,5 @@
+// Compile with: gcc -o client -Wall Peer-Client.
+
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -250,15 +252,23 @@ int connection(int type, char **args){
 	// TYPE 1: IndexGet ShortList TimeStart TimeFinish
 	if (type == 1){
 		struct ShortList_Data sld;
-		sld.startModTime = atol(args[2]);
-		sld.endModTime = atol(args[3]);
+		strcpy(sld.startModTime, args[2]);
+		strcpy(sld.endModTime, args[3]);
 
 		if (send(sock_fd, &sld, sizeof(sld), 0) == -1){
 			perror("\nError in sending ShortList_Data: sld\n");
 			return 1;
 		}
 
-		// TODO: RECV DATA & OUTPUT
+		struct ShortList_Return_Data slrd;
+
+		if (recv(sock_fd, &slrd, sizeof(slrd), 0) == -1){
+			perror("Error in receiving ShortList_Return_Data: slrd!");
+			return 1;
+		}
+
+		printf("\n%s", slrd.output);
+
 		return 1;
 	}
 

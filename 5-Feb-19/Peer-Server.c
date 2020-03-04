@@ -1,3 +1,7 @@
+// Compile with: gcc -o server -Wall Peer-Server.c -lcrypto -lssl
+
+#define _XOPEN_SOURCE
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -81,10 +85,28 @@ int main(int argc, char *argv[]){
 				exit(EXIT_FAILURE);
 			}
 
-			long int startTime = sld.startModTime;
-			long int endTime = sld.endModTime;
+			char *time_details_start;
+			time_details_start = (char *)malloc(sizeof(char) * 20);
+			strcpy(time_details_start, sld.startModTime);
+			struct tm tm_start;
+			strptime(time_details_start, "%d-%m-%y", &tm_start);
+			time_t tStart = mktime(&tm_start);
 
-			// TODO: Create a function to handle this and send data back
+			char *time_details_end;
+			time_details_end = (char *)malloc(sizeof(char) * 20);
+			strcpy(time_details_end, sld.endModTime);
+			struct tm tm_end;
+			strptime(time_details_end, "%d-%m-%y", &tm_end);
+			time_t tEnd = mktime(&tm_end);
+
+			struct ShortList_Return_Data slrd;
+
+			strcpy(slrd.output, ShortList(tStart, tEnd));
+
+			if (send(conn_fd, &slrd, sizeof(slrd), 0) == -1){
+				perror("\nError in sending ShortList_Return_Data: slrd\n");
+				exit(EXIT_FAILURE);
+			}
 		}
 
 		// TYPE 2: IndexGet LongList
@@ -97,9 +119,6 @@ int main(int argc, char *argv[]){
 				perror("\nError in sending LongList_Return_Data: llrd\n");
 				exit(EXIT_FAILURE);
 			}
-
-			printf("\nClose Connection!\n");
-			continue;
 		}
 
 		// TYPE 3: IndexGet RegEx "RegEx"
@@ -246,27 +265,33 @@ int main(int argc, char *argv[]){
 }
 
 char *ShortList(long int StartTime, long int StopTime){
-	char returnString[1024] = "";
+	char *returnString;
+	returnString = (char *)malloc(1024*5 * sizeof(char));
 	DIR *dir;
 	struct dirent *ent;
 	struct stat file_stat;
-	if ((dir = opendir (".")) != NULL) {
+	if ((dir = opendir ("SharedServer/")) != NULL) {
 		while ((ent = readdir (dir)) != NULL) {
-			stat(ent->d_name, &file_stat);
+			if (ent->d_type == DT_REG){
+				char tempFile[256] = "SharedServer/";
+				strcat(tempFile, ent->d_name);
 
-			if ((StartTime < file_stat.st_mtime) && (file_stat.st_mtime < StopTime)){
-				char size[10];
-				char lastMod[20];
+				stat(tempFile, &file_stat);
 
-				sprintf(size, "%ld", file_stat.st_size);
-				sprintf(lastMod, "%ld", file_stat.st_mtime);
+				if ((StartTime < file_stat.st_mtime) && (file_stat.st_mtime < StopTime)){
+					char size[10];
+					char lastMod[20];
 
-				strcat(returnString, ent->d_name);
-				strcat(returnString, "\t");
-				strcat(returnString, size);
-				strcat(returnString, "\t");
-				strcat(returnString, lastMod);
-				strcat(returnString, "\n");
+					sprintf(size, "%ld", file_stat.st_size);
+					sprintf(lastMod, "%ld", file_stat.st_mtime);
+
+					strcat(returnString, ent->d_name);
+					strcat(returnString, "\t");
+					strcat(returnString, size);
+					strcat(returnString, "\t");
+					strcat(returnString, lastMod);
+					strcat(returnString, "\n");
+				}
 			}
 		}
 		closedir (dir);
@@ -295,7 +320,7 @@ char *LongList(){
 				sprintf(size, "%ld", file_stat.st_size);
 
 				strcat(returnString, ent->d_name);
-				strcat(returnString, "\t");
+				strcat(returnString, "\t"); 
 				strcat(returnString, size);
 				strcat(returnString, "\t");
 				strcat(returnString, lastMod);
