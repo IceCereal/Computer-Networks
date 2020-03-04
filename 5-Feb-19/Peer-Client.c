@@ -1,4 +1,4 @@
-// Compile with: gcc -o client -Wall Peer-Client.
+// Compile with: gcc -o client -Wall Peer-Client.c
 
 #include <stdio.h>
 #include <unistd.h>
@@ -186,7 +186,7 @@ int FileUpload(char **args){
 		int flag_fileFound = 0;
 		DIR *dir;
 		struct dirent *ent;
-		if ((dir = opendir (".")) != NULL) {
+		if ((dir = opendir ("SharedClient/")) != NULL) {
 			while ((ent = readdir (dir)) != NULL) {
 				if (strcmp(args[1], ent->d_name) == 0)
 					flag_fileFound = 1;
@@ -327,9 +327,12 @@ int connection(int type, char **args){
 		struct FileUpload_Data fud;
 		struct stat file_stats;
 
+		char filename[300] = "SharedClient/";
+
+		strcat(filename, args[1]);
 		strcpy(fud.filename, args[1]);
 
-		stat(fud.filename, &file_stats);
+		stat(filename, &file_stats);
 
 		fud.filesize = file_stats.st_size;
 
@@ -338,7 +341,7 @@ int connection(int type, char **args){
 			return 1;
 		}
 
-		FILE *filePtr = fopen(fud.filename, "rb");
+		FILE *filePtr = fopen(filename, "rb");
 
 		char buffer[fud.filesize];
 
