@@ -60,8 +60,13 @@ struct ShortList_Return_Data{
 
 // FileHash Verify FileName
 struct FileHashVerify_Return_Data{
-	char md5value[33];
+	char md5value[100];
 	char lastModTime[50];
+};
+
+// IndexGet RegEx "RegEx"
+struct RegEx_Return_Data{
+	char output[256];
 };
 
 #endif

@@ -296,7 +296,15 @@ int connection(int type, char **args){
 			return 1;
 		}
 
-		// TODO: RECV DATA & OUTPUT
+		struct RegEx_Return_Data rerd;
+
+		if (recv(sock_fd, &rerd, sizeof(rerd), 0) == -1){
+			perror("Error in receiving RegEx_Return_Data: rerd`!");
+			return 1;
+		}
+
+		printf("\n%s", rerd.output);
+
 		return 1;
 	}
 

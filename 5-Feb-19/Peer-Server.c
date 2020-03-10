@@ -1,7 +1,5 @@
 // Compile with: gcc -o server -Wall Peer-Server.c -lcrypto -lssl
 
-#define _XOPEN_SOURCE
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/socket.h>
@@ -13,7 +11,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <dirent.h>
-#include <openssl/md5.h>
 #include <time.h>
 
 #include "common.h"
@@ -25,6 +22,7 @@
 char *ShortList(long int, long int);
 char *LongList();
 char *FileHash(char *);
+char *RegEx(char *);
 
 int main(int argc, char *argv[]){
 	int listen_fd, conn_fd;
@@ -130,10 +128,21 @@ int main(int argc, char *argv[]){
 				exit(EXIT_FAILURE);
 			}
 
-			char regex[256];
-			strcpy(regex, red.regex);
+			char *foundFiles;
+			foundFiles = (char *)malloc(sizeof(char) * 100);
 
-			// TODO: Create a function to handle this and send data back
+			foundFiles = RegEx(red.regex);
+
+			struct RegEx_Return_Data rerd;
+
+			strcpy(rerd.output, foundFiles);
+
+			if (send(conn_fd, &rerd, sizeof(rerd), 0) == -1){
+				perror("\nError in sending RegEx_Return_Data: rerd\n");
+				exit(EXIT_FAILURE);
+			}
+
+			free(foundFiles);
 		}
 
 		// TYPE 4: FileHash Verify FileName
@@ -157,7 +166,7 @@ int main(int argc, char *argv[]){
 			strftime(fhvrd.lastModTime, 20, "%d-%m-%y", localtime(&(file_stat.st_ctime)));
 
 			char *md5value;
-			md5value = (char *)malloc(sizeof(char) * 33);
+			md5value = (char *)malloc(sizeof(char) * 100);
 
 			md5value = FileHash(filename);
 			
@@ -333,23 +342,36 @@ char *LongList(){
 	return returnString;
 }
 
+void get_popen(char *exec, char *data){
+	FILE *f;
+
+	f = popen(exec, "r");
+
+	fgets(data, 512, f);
+
+	pclose(f);
+
+	return;
+}
+
 char *FileHash(char *filename){
-	unsigned char *digest;
-	digest = (unsigned char *)malloc(16 * sizeof(unsigned char));
-	MD5_CTX context;
-	struct stat file_stat;
-	stat(filename, &file_stat);
-	FILE *f = fopen(filename, "r");
-	char buffer[file_stat.st_size+1];
-	fread(buffer, 1, file_stat.st_size, f);
-	MD5_Init(&context);
-	MD5_Update(&context, buffer, strlen(buffer));
-	MD5_Final(digest, &context);
+	char exec[100] = {0};
+	sprintf(exec, "md5sum %s", filename);
 
-	char *md5string;
-	md5string = (char *)malloc(33 * sizeof(char));
-	for(int i = 0; i < 16; ++i)
-		sprintf(&md5string[i*2], "%02x", (unsigned int)digest[i]);
+	char *data;
+	data = (char *)malloc(100 * sizeof(char));
+	get_popen(exec, data);
 
-	return md5string;
+	return data;
+}
+
+char *RegEx(char *query){
+	char exec[100] = {0};
+	sprintf(exec, "find SharedServer/ -maxdepth 1 -name \"%s\" -print", query);
+
+	char *data;
+	data = (char *)malloc(100 * sizeof(char));
+	get_popen(exec, data);
+
+	return data;
 }
