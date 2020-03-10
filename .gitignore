@@ -1,2 +1,8 @@
 # VSCode Dump
 .vscode/
+
+# Temp Work Dir
+temp/
+
+# SharedClient, SharedServer
+Shared*/
